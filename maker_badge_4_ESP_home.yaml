@@ -1,0 +1,163 @@
+esphome:
+  name: esphome-makerbadge01
+  friendly_name: esphome-makerbadge01
+  on_boot: 
+    priority: -100
+    then:
+    - delay: 3sec
+    - component.update: my_display
+    - delay: 200ms
+    - component.update: my_display
+    - delay: 200ms
+    - output.turn_off: GPIO16_PIN
+    
+
+esp32:
+  board: esp32-s2-saola-1
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "ASDFJKLU=="
+
+ota:
+  password: "LKJHGFDSA=="
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esphome-Makerbadge01"
+    password: "ASDFLKJHG"
+
+captive_portal:
+
+#############################################################
+
+time:
+  - platform: homeassistant
+    id: esptime
+    
+### Get all needed variables from HomeAssistant plus Goodwe
+text_sensor:
+  - platform: homeassistant
+    entity_id: sensor.esp_home_teplota_kotce2
+    name: "TeplotaNaZemi"
+    id: teplota_na_zemi
+
+  - platform: homeassistant
+    entity_id: sensor.esp_home_teplota_kotce1
+    name: "Teplota2m"
+    id: teplota_dva_m
+
+  - platform: homeassistant
+    entity_id: sensor.esp_home_teplota_venku
+    name: "TeplotaVenku"
+    id: teplota_venku
+
+  - platform: homeassistant
+    entity_id: sensor.house_consumption
+    name: "Spotreba"
+    id: today_FVE_gen
+
+  - platform: homeassistant
+    entity_id: sensor.pv_power
+    name: "PV Power"
+    id: pv_power 
+
+  - platform: homeassistant
+    entity_id: sensor.today_s_pv_generation
+    name: "Dnes vygenerovano"
+    id: pv_today 
+
+  - platform: homeassistant
+    entity_id: sensor.battery_state_of_charge 
+    name: "SOC"
+    id: pv_soc
+
+  - platform: homeassistant  
+    entity_id: sensor.battery_temperature
+    name: "Baterka temperature"
+    id: teplo_baterka
+
+  - platform: homeassistant
+    entity_id: sensor.total_pv_generation
+    name: "PV TOTAL"
+    id: pv_total 
+
+
+
+
+spi:
+  clk_pin: GPIO36
+  mosi_pin: GPIO35
+
+output:
+  - platform: gpio
+    pin: GPIO16
+    id: GPIO16_PIN
+
+font:
+  - file: 'gfonts://Roboto'
+    id: font1
+    size: 12
+  - file: 'gfonts://Roboto'
+    id: font3
+    size: 10
+  - file: 'gfonts://Anton'
+    id: font2
+    size: 18
+  - file:
+      type: gfonts
+      family: Roboto
+      weight: 900
+    id: font4
+    size: 12
+  - file: 
+      type: gfonts
+      family: "Open+Sans"
+      #family: "Poppins"
+      #family: "Montserrat"
+      weight: 800
+    id: segoe
+    size: 18  
+    
+
+display:
+  - platform: waveshare_epaper
+    id: my_display
+    rotation: 270
+    cs_pin: 41
+    dc_pin: 40
+    busy_pin: 42
+    reset_pin: 39
+    model: 2.13in-ttgo-dke
+    update_interval: 120s
+    reset_duration: 2ms
+    full_update_every: 180
+    lambda: |-
+      id(GPIO16_PIN).turn_off();
+      it.strftime(2, 0, id(segoe), "%d. %B %Y  %H:%M", id(esptime).now());
+      it.line(10,26,240,26);
+      it.printf(0, 30, id(font1),  "FVE: %s kW",id(pv_total).state.c_str());
+      it.printf(0, 45, id(font1),  "Battery: %s °C", id(teplo_baterka).state.c_str());
+      it.printf(0, 60, id(font1),  "Spotreba: %s W", id(today_FVE_gen).state.c_str());
+      it.printf(0, 75, id(font1), "Vyroba: %s W", id(pv_power).state.c_str());
+      it.printf(0, 90, id(font1), "SOC: %s %%", id(pv_soc).state.c_str());      
+      it.printf(100, 45, id(segoe), "Venku:  %s °C", id(teplota_na_zemi).state.c_str());
+      it.printf(100, 65, id(segoe), "Ven 2:  %s °C", id(teplota_dva_m).state.c_str());
+      it.printf(100, 85, id(segoe), "PIR 2:  %s °C", id(teplota_venku).state.c_str());
+      it.line(10,110,240,110);
+      it.line(95,26,95,110);
+      it.line(95,44,240,44);
+      it.printf(100, 28, id(font3), "PV today: %s kWh", id(pv_today).state.c_str());
+       id(GPIO16_PIN).turn_off();
+      
+
